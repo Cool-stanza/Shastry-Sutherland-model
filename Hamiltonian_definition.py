@@ -1,4 +1,5 @@
 import numpy as np
+import matplotlib.pyplot as plt
 from scipy.sparse import lil_matrix, csr_matrix
 from scipy.sparse import dok_matrix
 from scipy.sparse import block_diag
@@ -6,105 +7,109 @@ from scipy.sparse.linalg import eigsh
 import scipy.linalg as la
 
 
+#coordinates of lattice points
+def generate_lattice(Lx,Ly):
+    coor = []                     
+    for i in range(Lx):       
+         for j in range(Ly):   
+            coor.append((i,j))
+    return coor
+
 # NEAREST NEIGHBORS
-neighbors = []
-for idx, (i, j) in enumerate(coor):
-    neighbor_list = []
+def nearest_neighbors(coor,Lx,Ly):
+    neighbors = []
+    for idx, (i, j) in enumerate(coor):
+        neighbor_list = []
     
-    right = (i+1)%Lx  # if i==Lx-1 nn==0 
-    neighbor_list.append((right, j))  
+        right = (i+1)%Lx  # if i==Lx-1 nn==0 
+        neighbor_list.append((right, j))  
     
-    top = (j-1)%Ly  # if j==0, nn==Ly-1 (==3)
-    neighbor_list.append((i, top))  
+        top = (j-1)%Ly  # if j==0, nn==Ly-1 (==3)
+        neighbor_list.append((i, top))  
     
-    neighbors.append(neighbor_list)
-    
-#---------------------------------------------------
-neighbors_indices = []
-for neighbor_list in neighbors:
-    indices = [coor.index(v) for v in neighbor_list]  # find the index of each nn
-    neighbors_indices.append(indices) 
-#-------------------------------------------------------
+        neighbors.append(neighbor_list)
 
-"""
-plt.figure(figsize=(3,3))
-plt.scatter(x, y)
-for idx, point in enumerate(coor):
-    plt.text(point[0] + 0.05, point[1] + 0.05, f"{idx}", fontsize=10)
+    return neighbors
 
-for i, neighbor_list in enumerate(neighbors_indices):
-    for neighbor_idx in neighbor_list:
-        x_vals = [coor[i][0], coor[neighbor_idx][0]]
-        y_vals = [coor[i][1], coor[neighbor_idx][1]]
-        plt.plot(x_vals, y_vals, 'k-', alpha=0.5)  # nn line
-plt.show()
-"""
+def index_nn(coor,Lx,Ly):
+    neighbors_indices = []
+    for neighbor_list in nearest_neighbors(coor,Lx,Ly):
+        indices = [coor.index(v) for v in neighbor_list]  # find the index of each nn
+        neighbors_indices.append(indices)    
+    return neighbors_indices
+
 
 # NEXT NEIGHBORS - DIAGONALS
-avoid = []
-diagonals = [None]*Lx*Ly
-for idx, (i, j) in enumerate(coor):   
-    if i%2==0 and j%2==0:
-        next_x = (i+1)  
-        next_y = (j+1)
-        diagonals[idx]=((next_x, next_y))
-        avoid.append((i,j))
+def next_neighbors(coor,Lx,Ly):
+    avoid = []
+    diagonals = [None]*Lx*Ly
+    for idx, (i, j) in enumerate(coor):   
+        if i%2==0 and j%2==0:
+            next_x = (i+1)  
+            next_y = (j+1)
+            diagonals[idx]=((next_x, next_y))
+            avoid.append((i,j))
         
-    if i%2!=0 and j%2!=0:     
-        next_x = (i-1)  
-        next_y = (j-1)
-        diagonals[idx]=((next_x, next_y))
-        avoid.append((i,j))  
+        if i%2!=0 and j%2!=0:     
+            next_x = (i-1)  
+            next_y = (j-1)
+            diagonals[idx]=((next_x, next_y))
+            avoid.append((i,j))  
 
-for idx, (i, j) in enumerate(coor):  
-    if (i,j) in avoid:
-        continue
-    elif i%2==0:
-        next_x = (i-1)%Lx 
-        next_y = (j+1)%Ly 
-        #print(i,j, "-->",next_x, next_y )
-        diagonals[idx]=((next_x,next_y))
-    elif i%2!=0:
-        next_x = (i+1)%Lx 
-        next_y = (j-1)%Ly 
-        #print(i,j, "-->",next_x, next_y )
-        diagonals[idx]=((next_x,next_y))
-#print("coor dei secondi vicini",diagonals)
+    for idx, (i, j) in enumerate(coor):  
+        if (i,j) in avoid:
+            continue
+        elif i%2==0:
+            next_x = (i-1)%Lx 
+            next_y = (j+1)%Ly 
+            #print(i,j, "-->",next_x, next_y )
+            diagonals[idx]=((next_x,next_y))
+        elif i%2!=0:
+            next_x = (i+1)%Lx 
+            next_y = (j-1)%Ly 
+            #print(i,j, "-->",next_x, next_y )
+            diagonals[idx]=((next_x,next_y))
+    return diagonals
 
-#---------------------------------------------
-diag_indices = []
-for diag_point in diagonals:
-    if diag_point is not None:  #
-        index = coor.index(diag_point)  # Trova l'indice della tupla in coor
-        diag_indices.append([index])  # Crea una lista con l'indice trovato
-    else:
-        diag_indices.append([])  
-#print("Indici dei secondi vicini diagonali:", diag_indices)
 
-#-----------------------------------------------
+def index_nnn(coor,Lx,Ly):
+    diag_indices = []
+    for diag_point in next_neighbors(coor,Lx,Ly):
+        if diag_point is not None:  #
+            index = coor.index(diag_point)  # Trova l'indice della tupla in coor
+            diag_indices.append([index])  # Crea una lista con l'indice trovato
+        else:
+            diag_indices.append([])     
+    return diag_indices
 
-# next neighbor lattice
-plt.figure(figsize=(3,3))
-plt.scatter(x, y)
-for idx, point in enumerate(coor):
-    plt.text(point[0] + 0.05, point[1] + 0.05, f"{idx}", fontsize=10)
 
-for i, diag_list in enumerate(diag_indices):
-    for diag_idx in diag_list:
-        x_vals = [coor[i][0], coor[diag_idx][0]]
-        y_vals = [coor[i][1], coor[diag_idx][1]]
-        plt.plot(x_vals, y_vals, 'k--', alpha=0.5)  # nn line
+#PLOTTING LATTICE
+def plot_lattice(coor, neighbors_indices, diag_indices):
+    x = [p[0] for p in coor]
+    y = [p[1] for p in coor]
+
+
+    plt.figure(figsize=(3,3))
+    plt.scatter(x, y)
+    for idx, point in enumerate(coor):
+         plt.text(point[0] + 0.05, point[1] + 0.05, f"{idx}", fontsize=10)
+
+    for i, diag_list in enumerate(diag_indices):
+        for diag_idx in diag_list:
+            x_vals = [coor[i][0], coor[diag_idx][0]]
+            y_vals = [coor[i][1], coor[diag_idx][1]]
+            plt.plot(x_vals, y_vals, 'k--', alpha=0.5)  # nn line
         
-for i, neighbor_list in enumerate(neighbors_indices):
-    for neighbor_idx in neighbor_list:
-        x_vals = [coor[i][0], coor[neighbor_idx][0]]
-        y_vals = [coor[i][1], coor[neighbor_idx][1]]
-        plt.plot(x_vals, y_vals, 'k-', alpha=0.5)  # nn line
-plt.show()
+    for i, neighbor_list in enumerate(neighbors_indices):
+        for neighbor_idx in neighbor_list:
+            x_vals = [coor[i][0], coor[neighbor_idx][0]]
+            y_vals = [coor[i][1], coor[neighbor_idx][1]]
+            plt.plot(x_vals, y_vals, 'k-', alpha=0.5)  # nn line
+    plt.show()
 
-#check
-for idx, (i,j) in enumerate(coor):
-    print(f"{idx} --> Nearest neighbors: {neighbors_indices[idx]}", f" -- Next neighbor: {diag_indices[idx]}")
+    #check
+    for idx, (i,j) in enumerate(coor):
+        print(f"{idx} --> Nearest neighbors: {neighbors_indices[idx]}", f" -- Next neighbor: {diag_indices[idx]}")
 
 #-------------------------------------------------------------------------------------------------------------------------
 
@@ -112,7 +117,7 @@ for idx, (i,j) in enumerate(coor):
 def flip(state,i,j): #flippa lo spin degli indici i e j
     return state ^ (2**i + 2**j) # ^==xor
 
-def Hamiltonian(J1, J2, state, Lx, Ly):
+def Hamiltonian(J1, J2, state, Lx, Ly, neighbors_indices, diag_indices):
     result = []
     seen_states_1 = set()  # Per evitare duplicati
     seen_states_2 = set() 
@@ -164,14 +169,14 @@ def build_basisN(L,N): #L=Lx*Ly number of sites, N number of spin up in the sect
     return basisN
 
 
-def build_HN(Lx,Ly,N,J1,J2):
+def build_HN(Lx,Ly,N,J1,J2,neighbors_indices,diag_indices):
     L=Lx*Ly
     basisN = build_basisN(L,N)
     dimN = len(basisN) #dimension of the subspace S_N
     HN = dok_matrix((dimN,dimN)) #crea matrice vuota sparsa
 
     for b,n in enumerate(basisN): #b index, n binary state
-        output = Hamiltonian(J1,J2,n,Lx,Ly) #H|n>
+        output = Hamiltonian(J1,J2,n,Lx,Ly,neighbors_indices,diag_indices) #H|n>
         for coeff,m in output:
             try:
                 a = basisN.index(m)
@@ -181,13 +186,13 @@ def build_HN(Lx,Ly,N,J1,J2):
     return HN.tocsr() #csr
 
 
-def H_diag_block(Lx,Ly,J1,J2):
+def H_diag_block(Lx,Ly,J1,J2,neighbors_indices,diag_indices):
     L=Lx*Ly
     blocks = []
     for N in range(L+1):
         basisN = build_basisN(L,N)
         if len(basisN) > 0:
-            HN = build_HN(Lx,Ly,N,J1,J2)
+            HN = build_HN(Lx,Ly,N,J1,J2,neighbors_indices,diag_indices)
             blocks.append(HN)
     H = block_diag(blocks, format="csr")
     return H
