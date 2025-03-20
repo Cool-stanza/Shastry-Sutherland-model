@@ -196,3 +196,42 @@ def H_diag_block(Lx,Ly,J1,J2,neighbors_indices,diag_indices):
             blocks.append(HN)
     H = block_diag(blocks, format="csr")
     return H
+
+
+#---------------------------------------------------------------------------------------------
+#CORRELATIONS
+def build_SzSz(Lx,Ly,N,neighbors_indices,diag_indices):
+    L = Lx*Ly
+    basisN = build_basisN(L,N)
+    dimN = len(basisN)
+    SzSz_nn = dok_matrix((dimN,dimN))
+    SzSz_nnn = dok_matrix((dimN,dimN))
+
+    for b,state in enumerate(basisN): # b index, state binary state
+        for i in range(L):
+            ni = (state & 2**i)/2**i #extract bit at position i --> 0 or 1
+            
+            for j in neighbors_indices[i]:
+                nj = (state & 2**j)/2**j
+                SzSz_nn[b,b] += (2*ni-1)*(2*nj-1)/4
+
+            for j in diag_indices[i]:
+                nj = (state & 2**j)/2**j
+                SzSz_nnn[b,b] += (2*ni-1)*(2*nj-1)/4
+
+    return SzSz_nn.tocsr(), SzSz_nnn.tocsr()
+
+def spin_corr(Lx,Ly,psi1,psi2,N,neighbors_indices,diag_indices):
+    L=Lx*Ly
+    SzSz_nn, SzSz_nnn = build_SzSz(Lx,Ly,N,neighbors_indices,diag_indices)
+
+    SzSz_nn_exval = np.vdot(psi1, SzSz_nn @ psi2)
+    SzSz_nnn_exval = np.vdot(psi1, SzSz_nnn @ psi2)
+
+    return SzSz_nn_exval, SzSz_nnn_exval
+            
+
+
+
+
+
