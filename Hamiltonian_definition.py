@@ -228,6 +228,16 @@ def spin_corr(Lx,Ly,psi1,psi2,N,neighbors_indices,diag_indices):
     SzSz_nn_exval = np.vdot(psi1, SzSz_nn @ psi2)
     SzSz_nnn_exval = np.vdot(psi1, SzSz_nnn @ psi2)
 
+    print(SzSz_nn_exval, SzSz_nnn_exval)
+
+    total_nn_links = sum(len(neighbors_indices[i]) for i in range(L)) / 2.
+    total_nnn_links = sum(len(diag_indices[i]) for i in range(L)) / 2.
+    print(total_nn_links)
+    print(total_nnn_links)
+
+    SzSz_nn_exval = SzSz_nn_exval / total_nn_links
+    SzSz_nnn_exval = SzSz_nnn_exval / total_nnn_links
+
     return SzSz_nn_exval, SzSz_nnn_exval
             
 
