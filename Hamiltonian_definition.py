@@ -199,7 +199,7 @@ def H_diag_block(Lx,Ly,J1,J2,neighbors_indices,diag_indices):
 
 
 #---------------------------------------------------------------------------------------------
-#CORRELATIONS
+#CORRELATIONS 1
 def build_SzSz(Lx,Ly,N,neighbors_indices,diag_indices):
     L = Lx*Ly
     basisN = build_basisN(L,N)
@@ -240,6 +240,25 @@ def spin_corr(Lx,Ly,psi1,psi2,N,neighbors_indices,diag_indices):
 
     return SzSz_nn_exval, SzSz_nnn_exval
             
+#CORRELATIONS 2
+def sz(state, site):
+    n = (state & 2**site)/2**site
+    sz = (2.*n-1)/2.
+    return sz
+
+def compute_sz_sz_correlations(GS, N, L):
+    basisN = build_basisN(L,N)
+    correlations = np.zeros((L, L))
+    for i in range(L):
+        for j in range(L):
+            total = 0.0
+            for k, config in enumerate(basisN):
+                amp = GS[k]
+                sz_i = sz(config, i)
+                sz_j = sz(config, j)
+                total += (amp**2) * sz_i * sz_j
+            correlations[i, j] = total
+    return correlations
 
 
 
