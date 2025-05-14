@@ -283,12 +283,15 @@ def compute_sisj_correlations(GS, N, L):
     for i in range(L):
         for j in range(L):
             total = 0.0
+            tot_szsz = 0.0
+            tot_1 = 0.0
+            tot_2 = 0.0
             for k, state in enumerate(basisN):
-                amp = GS[k]
+                amp = GS[k]   #per ogni stato della base prendo la relativa ampiezza nel GS
                 #SzSz
                 sz_i = sz(state, i)
                 sz_j = sz(state, j)
-                total += (amp**2) * sz_i * sz_j
+                tot_szsz += (amp**2) * sz_i * sz_j
                 
                 ni = (state & 2**i)/2**i
                 nj = (state & 2**j)/2**j
@@ -298,60 +301,45 @@ def compute_sisj_correlations(GS, N, L):
                     if new_state in state_index:
                         new_k = state_index[new_state]
                         new_amp = GS[new_k]
-                        total += 0.5*amp**2 #ampiezze reali
+                        tot_1 += amp*new_amp #ampiezze reali
+                if i==j:           
+                    tot_1 += 1/2 * amp**2 #1/2 perchè sto contando sia i=j sia j=i
                 #S-S+
                 if ni==1 and nj==0:
                     new_state = flip(state,i,j)
                     if new_state in state_index:
                         new_k = state_index[new_state]
                         new_amp = GS[new_k]
-                        total += 0.5*amp**2 #ampiezze reali
+                        tot_2 += amp*new_amp #ampiezze reali
+                if i==j:
+                    tot_2 += 1/2 * amp**2
 
+            # if i==0: #checking
+            #     print(f'({i},{j}), szsz={tot_szsz}, s+s-={tot_1}, s-s+={tot_2}')
+
+            total = tot_szsz + 0.5*(tot_1 + tot_2)
             correlations[i, j] = total
     return correlations
 
-def compute_sz_sz_nn_nnn_avg_and_matrix(GS, N, L, neighbors_indices, diag_indices):
-    basisN = build_basisN(L, N)
-    correlations = np.zeros((L, L))
-    szsz_nn_total = 0.0
-    szsz_nnn_total = 0.0
-    total_nn_links = 0
-    total_nnn_links = 0
+def sisj_mean(state,N,L,neighbors_indices,diag_indices):
 
-    for k, config in enumerate(basisN):
-        amp = GS[k]
-        prob = amp**2
+    corr = compute_sisj_correlations(state, N, L)
 
-        for i in range(L):
-            sz_i = sz(config, i)
+    sisj_nn = 0.0
+    sisj_nnn = 0.0
+    for i in range(L):
+        for j in range(L):
+            if j in neighbors_indices[i]:
+                sisj_nn += corr[i,j]
+            if j in diag_indices[i]:
+                sisj_nnn += corr[i,j]
 
-            # Nearest-neighbors
-            for j in neighbors_indices[i]:
-                if i < j:  # to avoid double counting
-                    sz_j = sz(config, j)
-                    value = prob * sz_i * sz_j
-                    correlations[i, j] += value
-                    correlations[j, i] += value  # symmetric
-                    szsz_nn_total += value
-                    total_nn_links += 1
+    total_nn_links = sum(len(neighbors_indices[i]) for i in range(L)) 
+    total_nnn_links = sum(len(diag_indices[i]) for i in range(L)) 
+    sisj_nn = sisj_nn/total_nn_links
+    sisj_nnn = sisj_nnn/total_nnn_links
 
-            # Next-nearest-neighbors
-            for j in diag_indices[i]:
-                if i < j:
-                    sz_j = sz(config, j)
-                    value = prob * sz_i * sz_j
-                    correlations[i, j] += value
-                    correlations[j, i] += value  # symmetric
-                    szsz_nnn_total += value
-                    total_nnn_links += 1
-
-    avg_nn = szsz_nn_total / total_nn_links if total_nn_links > 0 else 0.0
-    avg_nnn = szsz_nnn_total / total_nnn_links if total_nnn_links > 0 else 0.0
-
-    return avg_nn, avg_nnn, correlations
-
-
-
-
+    return sisj_nn, sisj_nnn
+            
 
 
