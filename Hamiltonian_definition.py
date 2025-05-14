@@ -200,12 +200,17 @@ def H_diag_block(Lx,Ly,J1,J2,neighbors_indices,diag_indices):
 
 #---------------------------------------------------------------------------------------------
 #CORRELATIONS 1
-def build_SzSz(Lx,Ly,N,neighbors_indices,diag_indices):
+def build_SiSj(Lx,Ly,N,neighbors_indices,diag_indices):
     L = Lx*Ly
     basisN = build_basisN(L,N)
     dimN = len(basisN)
+    state_index = {state: idx for idx, state in enumerate(basisN)}
+
     SzSz_nn = dok_matrix((dimN,dimN))
     SzSz_nnn = dok_matrix((dimN,dimN))
+
+    Sflip_nn = dok_matrix((dimN,dimN))
+    Sflip_nnn = dok_matrix((dimN,dimN))
 
     for b,state in enumerate(basisN): # b index, state binary state
         for i in range(L):
@@ -213,32 +218,57 @@ def build_SzSz(Lx,Ly,N,neighbors_indices,diag_indices):
             
             for j in neighbors_indices[i]:
                 nj = (state & 2**j)/2**j
+                #SzSz
                 SzSz_nn[b,b] += (2*ni-1)*(2*nj-1)/4
+                #S+S-
+                if ni==0 and nj==1:       
+                    new_state = flip(state,i,j)
+                    if new_state in state_index:
+                        b_new = state_index[new_state]
+                        Sflip_nn[b_new,b] += 1/2
+                #S-S+
+                if ni==1 and nj==0:       
+                    new_state = flip(state,i,j)
+                    if new_state in state_index:
+                        b_new = state_index[new_state]
+                        Sflip_nn[b_new,b] += 1/2
+
 
             for j in diag_indices[i]:
                 nj = (state & 2**j)/2**j
+                #SzSz
                 SzSz_nnn[b,b] += (2*ni-1)*(2*nj-1)/4
+                #S+S-
+                if ni==0 and nj==1:       
+                    new_state = flip(state,i,j)
+                    if new_state in state_index:
+                        b_new = state_index[new_state]
+                        Sflip_nn[b_new,b] += 1/2
+                #S-S+
+                if ni==1 and nj==0:       
+                    new_state = flip(state,i,j)
+                    if new_state in state_index:
+                        b_new = state_index[new_state]
+                        Sflip_nn[b_new,b] += 1/2
 
     return SzSz_nn.tocsr(), SzSz_nnn.tocsr()
 
 def spin_corr(Lx,Ly,psi1,psi2,N,neighbors_indices,diag_indices):
     L=Lx*Ly
-    SzSz_nn, SzSz_nnn = build_SzSz(Lx,Ly,N,neighbors_indices,diag_indices)
+    SiSj_nn, SiSj_nnn = build_SiSj(Lx,Ly,N,neighbors_indices,diag_indices)
 
-    SzSz_nn_exval = np.vdot(psi1, SzSz_nn @ psi2)
-    SzSz_nnn_exval = np.vdot(psi1, SzSz_nnn @ psi2)
+    SiSj_nn_exval = np.vdot(psi1, SiSj_nn @ psi2)
+    SiSj_nnn_exval = np.vdot(psi1, SiSj_nnn @ psi2)
 
-    print(SzSz_nn_exval, SzSz_nnn_exval)
+    total_nn_links = sum(len(neighbors_indices[i]) for i in range(L)) 
+    total_nnn_links = sum(len(diag_indices[i]) for i in range(L)) 
+    #print(total_nn_links)
+    #print(total_nnn_links)
 
-    total_nn_links = sum(len(neighbors_indices[i]) for i in range(L)) / 2.
-    total_nnn_links = sum(len(diag_indices[i]) for i in range(L)) / 2.
-    print(total_nn_links)
-    print(total_nnn_links)
+    SiSj_nn_exval = SiSj_nn_exval / total_nn_links
+    SiSj_nnn_exval = SiSj_nnn_exval / total_nnn_links
 
-    SzSz_nn_exval = SzSz_nn_exval / total_nn_links
-    SzSz_nnn_exval = SzSz_nnn_exval / total_nnn_links
-
-    return SzSz_nn_exval, SzSz_nnn_exval
+    return SiSj_nn_exval, SiSj_nnn_exval
             
 #CORRELATIONS 2
 def sz(state, site):
@@ -246,19 +276,80 @@ def sz(state, site):
     sz = (2.*n-1)/2.
     return sz
 
-def compute_sz_sz_correlations(GS, N, L):
+def compute_sisj_correlations(GS, N, L):
     basisN = build_basisN(L,N)
+    state_index = {state: idx for idx, state in enumerate(basisN)}
     correlations = np.zeros((L, L))
     for i in range(L):
         for j in range(L):
             total = 0.0
-            for k, config in enumerate(basisN):
+            for k, state in enumerate(basisN):
                 amp = GS[k]
-                sz_i = sz(config, i)
-                sz_j = sz(config, j)
+                #SzSz
+                sz_i = sz(state, i)
+                sz_j = sz(state, j)
                 total += (amp**2) * sz_i * sz_j
+                
+                ni = (state & 2**i)/2**i
+                nj = (state & 2**j)/2**j
+                #S+S-
+                if ni==0 and nj==1:
+                    new_state = flip(state,i,j)
+                    if new_state in state_index:
+                        new_k = state_index[new_state]
+                        new_amp = GS[new_k]
+                        total += 0.5*amp**2 #ampiezze reali
+                #S-S+
+                if ni==1 and nj==0:
+                    new_state = flip(state,i,j)
+                    if new_state in state_index:
+                        new_k = state_index[new_state]
+                        new_amp = GS[new_k]
+                        total += 0.5*amp**2 #ampiezze reali
+
             correlations[i, j] = total
     return correlations
+
+def compute_sz_sz_nn_nnn_avg_and_matrix(GS, N, L, neighbors_indices, diag_indices):
+    basisN = build_basisN(L, N)
+    correlations = np.zeros((L, L))
+    szsz_nn_total = 0.0
+    szsz_nnn_total = 0.0
+    total_nn_links = 0
+    total_nnn_links = 0
+
+    for k, config in enumerate(basisN):
+        amp = GS[k]
+        prob = amp**2
+
+        for i in range(L):
+            sz_i = sz(config, i)
+
+            # Nearest-neighbors
+            for j in neighbors_indices[i]:
+                if i < j:  # to avoid double counting
+                    sz_j = sz(config, j)
+                    value = prob * sz_i * sz_j
+                    correlations[i, j] += value
+                    correlations[j, i] += value  # symmetric
+                    szsz_nn_total += value
+                    total_nn_links += 1
+
+            # Next-nearest-neighbors
+            for j in diag_indices[i]:
+                if i < j:
+                    sz_j = sz(config, j)
+                    value = prob * sz_i * sz_j
+                    correlations[i, j] += value
+                    correlations[j, i] += value  # symmetric
+                    szsz_nnn_total += value
+                    total_nnn_links += 1
+
+    avg_nn = szsz_nn_total / total_nn_links if total_nn_links > 0 else 0.0
+    avg_nnn = szsz_nnn_total / total_nnn_links if total_nnn_links > 0 else 0.0
+
+    return avg_nn, avg_nnn, correlations
+
 
 
 
