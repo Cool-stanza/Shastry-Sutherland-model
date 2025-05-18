@@ -206,11 +206,8 @@ def build_SiSj(Lx,Ly,N,neighbors_indices,diag_indices):
     dimN = len(basisN)
     state_index = {state: idx for idx, state in enumerate(basisN)}
 
-    SzSz_nn = dok_matrix((dimN,dimN))
-    SzSz_nnn = dok_matrix((dimN,dimN))
-
-    Sflip_nn = dok_matrix((dimN,dimN))
-    Sflip_nnn = dok_matrix((dimN,dimN))
+    SiSj_nn = dok_matrix((dimN,dimN))
+    SiSj_nnn = dok_matrix((dimN,dimN))
 
     for b,state in enumerate(basisN): # b index, state binary state
         for i in range(L):
@@ -219,39 +216,39 @@ def build_SiSj(Lx,Ly,N,neighbors_indices,diag_indices):
             for j in neighbors_indices[i]:
                 nj = (state & 2**j)/2**j
                 #SzSz
-                SzSz_nn[b,b] += (2*ni-1)*(2*nj-1)/4
+                SiSj_nn[b,b] += (2*ni-1)*(2*nj-1)/4   #+1/2 + per il termine 1/2(Si+Si- + Si-Si+)
                 #S+S-
                 if ni==0 and nj==1:       
                     new_state = flip(state,i,j)
                     if new_state in state_index:
                         b_new = state_index[new_state]
-                        Sflip_nn[b_new,b] += 1/2
+                        SiSj_nn[b_new,b] += 1/2
                 #S-S+
                 if ni==1 and nj==0:       
                     new_state = flip(state,i,j)
                     if new_state in state_index:
                         b_new = state_index[new_state]
-                        Sflip_nn[b_new,b] += 1/2
+                        SiSj_nn[b_new,b] += 1/2
 
 
             for j in diag_indices[i]:
                 nj = (state & 2**j)/2**j
                 #SzSz
-                SzSz_nnn[b,b] += (2*ni-1)*(2*nj-1)/4
+                SiSj_nnn[b,b] += (2*ni-1)*(2*nj-1)/4  #+1/2 + per il termine 1/2(Si+Si- + Si-Si+)
                 #S+S-
                 if ni==0 and nj==1:       
                     new_state = flip(state,i,j)
                     if new_state in state_index:
                         b_new = state_index[new_state]
-                        Sflip_nn[b_new,b] += 1/2
+                        SiSj_nnn[b_new,b] += 1/2
                 #S-S+
                 if ni==1 and nj==0:       
                     new_state = flip(state,i,j)
                     if new_state in state_index:
                         b_new = state_index[new_state]
-                        Sflip_nn[b_new,b] += 1/2
+                        SiSj_nnn[b_new,b] += 1/2
 
-    return SzSz_nn.tocsr(), SzSz_nnn.tocsr()
+    return SiSj_nn.tocsr(), SiSj_nnn.tocsr()
 
 def spin_corr(Lx,Ly,psi1,psi2,N,neighbors_indices,diag_indices):
     L=Lx*Ly
