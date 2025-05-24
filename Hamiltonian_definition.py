@@ -111,6 +111,39 @@ def plot_lattice(coor, neighbors_indices, diag_indices):
     for idx, (i,j) in enumerate(coor):
         print(f"{idx} --> Nearest neighbors: {neighbors_indices[idx]}", f" -- Next neighbor: {diag_indices[idx]}")
 
+
+import matplotlib.pyplot as plt
+
+def plot_dimer(coor, neighbors_indices, diag_indices, spins):
+    # Diagonali selezionate da disegnare
+    selected_diagonals = [(2, 7), (10, 15), (6, 9), (0, 5), (8, 13)]
+
+    plt.figure(figsize=(3, 3))
+    ax = plt.gca()
+
+    # Disegna frecce per spin up/down
+    for i, (x, y) in enumerate(coor):
+        dx, dy = 0, 0.3 * spins[i]  # Verso alto (+1) o basso (-1)
+        ax.arrow(x, y-dy/2, dx, dy, head_width=0.1, head_length=0.1, fc='black', ec='black')
+
+    # Etichette dei nodi
+    for idx, (x, y) in enumerate(coor):
+        ax.text(x + 0.05, y + 0.05, str(idx), fontsize=10)
+
+    # Disegna solo le diagonali selezionate
+    for i, j in selected_diagonals:
+        x_vals = [coor[i][0], coor[j][0]]
+        y_vals = [coor[i][1], coor[j][1]]
+        ax.plot(x_vals, y_vals, 'k--', alpha=0.7)
+    
+
+    ax.set_aspect('equal')
+    ax.axis('off')
+    plt.tight_layout()
+    plt.show()
+
+
+
 #-------------------------------------------------------------------------------------------------------------------------
 
 # HAMILTONIAN
