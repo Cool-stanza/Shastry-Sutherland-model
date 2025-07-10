@@ -6,6 +6,8 @@ from scipy.sparse import block_diag
 from scipy.sparse.linalg import eigsh
 import scipy.linalg as la
 
+#-------------------------------------------------------------------------------------------
+#LATTICE
 
 #coordinates of lattice points
 def generate_lattice(Lx,Ly):
@@ -94,11 +96,17 @@ def plot_lattice(coor, neighbors_indices, diag_indices):
     for idx, point in enumerate(coor):
          plt.text(point[0] + 0.05, point[1] + 0.05, f"{idx}", fontsize=10)
 
-    for i, diag_list in enumerate(diag_indices):
-        for diag_idx in diag_list:
-            x_vals = [coor[i][0], coor[diag_idx][0]]
-            y_vals = [coor[i][1], coor[diag_idx][1]]
-            plt.plot(x_vals, y_vals, 'k--', alpha=0.5)  # nn line
+    # for i, diag_list in enumerate(diag_indices):
+    #     for diag_idx in diag_list:
+    #         x_vals = [coor[i][0], coor[diag_idx][0]]
+    #         y_vals = [coor[i][1], coor[diag_idx][1]]
+    #         plt.plot(x_vals, y_vals, 'k--', alpha=0.5)  # nnn line
+    
+    diagonali_da_plottare = [(2, 7), (6, 9), (10, 15), (0, 5), (8, 13)] # JUST TO MAKE A NICE PLOT
+    for i, j in diagonali_da_plottare:
+        x_vals = [coor[i][0], coor[j][0]]
+        y_vals = [coor[i][1], coor[j][1]]
+        plt.plot(x_vals, y_vals, 'k--', alpha=0.8)
         
     for i, neighbor_list in enumerate(neighbors_indices):
         for neighbor_idx in neighbor_list:
@@ -112,37 +120,29 @@ def plot_lattice(coor, neighbors_indices, diag_indices):
         print(f"{idx} --> Nearest neighbors: {neighbors_indices[idx]}", f" -- Next neighbor: {diag_indices[idx]}")
 
 
-import matplotlib.pyplot as plt
 
 def plot_dimer(coor, neighbors_indices, diag_indices, spins):
-    # Diagonali selezionate da disegnare
-    selected_diagonals = [(2, 7), (10, 15), (6, 9), (0, 5), (8, 13)]
+    selected_diagonals = [(2, 7), (10, 15), (6, 9), (0, 5), (8, 13)] #diag to plot
 
     plt.figure(figsize=(3, 3))
     ax = plt.gca()
 
-    # Disegna frecce per spin up/down
     for i, (x, y) in enumerate(coor):
         dx, dy = 0, 0.3 * spins[i]  # Verso alto (+1) o basso (-1)
         ax.arrow(x, y-dy/2, dx, dy, head_width=0.1, head_length=0.1, fc='black', ec='black')
 
-    # Etichette dei nodi
     for idx, (x, y) in enumerate(coor):
         ax.text(x + 0.05, y + 0.05, str(idx), fontsize=10)
 
-    # Disegna solo le diagonali selezionate
     for i, j in selected_diagonals:
         x_vals = [coor[i][0], coor[j][0]]
         y_vals = [coor[i][1], coor[j][1]]
         ax.plot(x_vals, y_vals, 'k--', alpha=0.7)
     
-
     ax.set_aspect('equal')
     ax.axis('off')
     plt.tight_layout()
     plt.show()
-
-
 
 #-------------------------------------------------------------------------------------------------------------------------
 
@@ -168,7 +168,7 @@ def Hamiltonian(J1, J2, state, Lx, Ly, neighbors_indices, diag_indices):
 
         nn_1 = (state & 2**nn_x)/2**nn_x
         nn_2 = (state & 2**nn_y)/2**nn_y
-        coeff_nn += (2*n-1)*(2*nn_1-1)/4 + (2*n-1)*(2*nn_2-1)/4 # sarebbe (2*n-1)/2 * (2*nn-1)/2 
+        coeff_nn += (2*n-1)*(2*nn_1-1)/4 + (2*n-1)*(2*nn_2-1)/4 # (2*n-1)/2 * (2*nn-1)/2 
         if n!=nn_1 : 
             new_state_1 = flip(state,i,nn_x)
             if new_state_1 not in seen_states_1:
@@ -176,12 +176,12 @@ def Hamiltonian(J1, J2, state, Lx, Ly, neighbors_indices, diag_indices):
                 seen_states_1.add(new_state_1)
         if n!=nn_2 : 
             new_state_2 = flip(state,i,nn_y)
-            #if new_state_2 not in seen_states_2:
-            result.append([J1/2,new_state_2])
-             #   seen_states_2.add(new_state_2)
+            if new_state_2 not in seen_states_2:
+                result.append([J1/2,new_state_2])
+                seen_states_2.add(new_state_2)
         
         nnn = (state & 2**nn_d)/2**nn_d
-        coeff_nnn += (2*n-1)*(2*nnn-1)/8 #1/2 in più perchè i vicini in diagonale li sto contando due volte
+        coeff_nnn += (2*n-1)*(2*nnn-1)/8 #1/2 in più perchè i vicini in diagonale li sto contando due volte per come ho definito i legami diagonali
         if n!=nnn : 
             new_state_d = flip(state,i,nn_d)
             if new_state_d not in seen_states_d:
