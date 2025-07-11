@@ -1,4 +1,4 @@
-SHASTRY SUTHERLAND MODEL 
+# SHASTRY SUTHERLAND MODEL 
 
 Notebooks for the diagonalization of the Shastry-Sutherland model 4x4:
 $H = J1\sum_{<i,j>} S_iS_j +  J2\sum_{<<i,j>>} S_iS_j$
