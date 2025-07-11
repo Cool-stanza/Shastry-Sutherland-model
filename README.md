@@ -1,5 +1,5 @@
 # SHASTRY SUTHERLAND MODEL 
-
+### Project for the exam "Introduzione ai sistemi quantistici a molti corpi"
 Notebooks for the diagonalization of the Shastry-Sutherland model 4x4:
 $H = J1\sum_{<i,j>} S_iS_j +  J2\sum_{<<i,j>>} S_iS_j$
 where the first term runs over the nearest neighbours and the second term runs over some selected diagonal bonds, called dimers.
