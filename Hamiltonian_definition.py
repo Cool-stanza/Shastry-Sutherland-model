@@ -96,17 +96,17 @@ def plot_lattice(coor, neighbors_indices, diag_indices):
     for idx, point in enumerate(coor):
          plt.text(point[0] + 0.05, point[1] + 0.05, f"{idx}", fontsize=10)
 
-    for i, diag_list in enumerate(diag_indices):
-        for diag_idx in diag_list:
-            x_vals = [coor[i][0], coor[diag_idx][0]]
-            y_vals = [coor[i][1], coor[diag_idx][1]]
-            plt.plot(x_vals, y_vals, 'k--', alpha=0.5)  # nnn line
+    # for i, diag_list in enumerate(diag_indices):
+    #     for diag_idx in diag_list:
+    #         x_vals = [coor[i][0], coor[diag_idx][0]]
+    #         y_vals = [coor[i][1], coor[diag_idx][1]]
+    #         plt.plot(x_vals, y_vals, 'k--', alpha=0.5)  # nnn line
     
-    # diagonali_da_plottare = [(2, 7), (6, 9), (10, 15), (0, 5), (8, 13)] # JUST TO MAKE A NICE PLOT
-    # for i, j in diagonali_da_plottare:
-    #     x_vals = [coor[i][0], coor[j][0]]
-    #     y_vals = [coor[i][1], coor[j][1]]
-    #     plt.plot(x_vals, y_vals, 'k--', alpha=0.8)
+    diagonali_da_plottare = [(2, 7), (6, 9), (10, 15), (0, 5), (8, 13)] # JUST TO MAKE A NICE PLOT
+    for i, j in diagonali_da_plottare:
+        x_vals = [coor[i][0], coor[j][0]]
+        y_vals = [coor[i][1], coor[j][1]]
+        plt.plot(x_vals, y_vals, 'k--', alpha=0.8)
         
     for i, neighbor_list in enumerate(neighbors_indices):
         for neighbor_idx in neighbor_list:
