@@ -10,6 +10,7 @@ import scipy.linalg as la
 #LATTICE
 
 #coordinates of lattice points
+
 def generate_lattice(Lx,Ly):
     coor = []                     
     for i in range(Lx):       
@@ -18,6 +19,7 @@ def generate_lattice(Lx,Ly):
     return coor
 
 # NEAREST NEIGHBORS
+
 def nearest_neighbors(coor,Lx,Ly):
     neighbors = []
     for idx, (i, j) in enumerate(coor):
@@ -33,6 +35,7 @@ def nearest_neighbors(coor,Lx,Ly):
 
     return neighbors
 
+
 def index_nn(coor,Lx,Ly):
     neighbors_indices = []
     for neighbor_list in nearest_neighbors(coor,Lx,Ly):
@@ -42,6 +45,7 @@ def index_nn(coor,Lx,Ly):
 
 
 # NEXT NEIGHBORS - DIAGONALS
+
 def next_neighbors(coor,Lx,Ly):
     avoid = []
     diagonals = [None]*Lx*Ly
@@ -75,8 +79,9 @@ def next_neighbors(coor,Lx,Ly):
 
 
 def index_nnn(coor,Lx,Ly):
+    nn = next_neighbors(coor,Lx,Ly)
     diag_indices = []
-    for diag_point in next_neighbors(coor,Lx,Ly):
+    for diag_point in nn:
         if diag_point is not None:  #
             index = coor.index(diag_point)  # Trova l'indice della tupla in coor
             diag_indices.append([index])  # Crea una lista con l'indice trovato
@@ -86,6 +91,7 @@ def index_nnn(coor,Lx,Ly):
 
 
 #PLOTTING LATTICE
+
 def plot_lattice(coor, neighbors_indices, diag_indices):
     x = [p[0] for p in coor]
     y = [p[1] for p in coor]
@@ -147,8 +153,10 @@ def plot_dimer(coor, neighbors_indices, diag_indices, spins):
 #-------------------------------------------------------------------------------------------------------------------------
 
 # HAMILTONIAN
+
 def flip(state,i,j): #flippa lo spin degli indici i e j
     return state ^ (2**i + 2**j) # ^==xor
+
 
 def Hamiltonian(J1, J2, state, Lx, Ly, neighbors_indices, diag_indices):
     result = []
@@ -193,6 +201,7 @@ def Hamiltonian(J1, J2, state, Lx, Ly, neighbors_indices, diag_indices):
 
 
 #MATRICE DIAGONALE A BLOCCHI
+
 def build_basisN(L,N): #L=Lx*Ly number of sites, N number of spin up in the sector
     basisN = []
     for n in range(2**L):
@@ -233,6 +242,7 @@ def H_diag_block(Lx,Ly,J1,J2,neighbors_indices,diag_indices):
 
 #---------------------------------------------------------------------------------------------
 #CORRELATIONS 1
+
 def build_SiSj(Lx,Ly,N,neighbors_indices,diag_indices):
     L = Lx*Ly
     basisN = build_basisN(L,N)
@@ -283,6 +293,7 @@ def build_SiSj(Lx,Ly,N,neighbors_indices,diag_indices):
 
     return SiSj_nn.tocsr(), SiSj_nnn.tocsr()
 
+
 def spin_corr(Lx,Ly,psi1,psi2,N,neighbors_indices,diag_indices):
     L=Lx*Ly
     SiSj_nn, SiSj_nnn = build_SiSj(Lx,Ly,N,neighbors_indices,diag_indices)
@@ -301,10 +312,12 @@ def spin_corr(Lx,Ly,psi1,psi2,N,neighbors_indices,diag_indices):
     return SiSj_nn_exval, SiSj_nnn_exval
             
 #CORRELATIONS 2
+
 def sz(state, site):
     n = (state & 2**site)/2**site
     sz = (2.*n-1)/2.
     return sz
+
 
 def compute_sisj_correlations(GS, N, L):
     basisN = build_basisN(L,N)
@@ -351,6 +364,7 @@ def compute_sisj_correlations(GS, N, L):
             correlations[i, j] = total
     return correlations
 
+
 def sisj_mean(state,N,L,neighbors_indices,diag_indices):
 
     corr = compute_sisj_correlations(state, N, L)
@@ -371,5 +385,3 @@ def sisj_mean(state,N,L,neighbors_indices,diag_indices):
 
     return sisj_nn, sisj_nnn
             
-
-
